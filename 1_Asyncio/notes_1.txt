@@ -1,0 +1,225 @@
+=================Asyncio====================
+- Shines for handling modern web and networking tasks is asyncio.
+- Is pythons answer for handling clean, efficient and scalable code for
+concurrent I/O operations.
+
+
+====Understanding Asyncio======
+Core concepts of Asyncio
+1. Event Loops: The central execution device provided by asyncio.
+Manages and distributes the execution of different tasks. Responsible
+for handling events and scheduling asynchronous routines.
+2. Coroutines: Asynchronous functions declared with "async def". Functions
+can be paused and resume at await points, allowing I/O operations to 
+run in the background.
+3. Futures: Object that represent the result of work that has not yet been 
+completed. Returned from tasks scheduled by the event loop.
+4. Tasks: Scheduled coroutines that are wrapped into a future object by the
+event loop, allowing their execution.
+
+========Getting Started with Asyncio========
+- It is all about writing code that can do multiple things at once
+without actually doing them at the same time. 
+- asnync programming is all about keep moving efficiently without
+unnecessarry waiting.
+
+===============await==================
+- It is used to pause the execution of an async function until an awaitable
+object(like coroutines, Tasks, Futures, or I/O) completes, allowing
+other tasks to run in the meantime.
+- Enables efficient handling of I/O bound and high-level structured network code.
+
+==Understanding await===
+1. Context: await can only be used inside async functions. Attempting
+to use it outside such a context results in a syntax error.
+2. Purpose: Primary function is to yield control back to the event loop,
+suspending the execution of enclosing coroutine until the awaited object
+is resolved. 
+3. Awaitability: The objects used with await must be available. Most common
+awaitable are coroutines declared with async def, others include: asyncio
+Tasks, Futures, or any object with an __await__() method.
+
+=====Examples=====
+Start with:
+#!/usr/bin/env python3
+
+import asyncio
+async def say_hello_async():
+    await asyncio.sleep(2)
+    print("Hello, Async World!")
+
+asyncio.run(say_hello_async())
+*********************************
+- While we wait above the event loop can do other tasks, like checking
+email or playing a tune. making our code non-blocking and more efficient
+******************MOre Efficient Example********************************
+#!/usr/bin/env python3
+import asyncio
+
+async def say_hello_async():
+    await asyncio.sleep(2)    #simulate a delay of 2 seconds
+    print("Hello, Async World!")    
+
+async def do_something_else():
+    print("Starting another task...")
+    await asyncio.sleep(1)    #simulate doing something else for 1 second 
+    print("Finished another task!")
+
+async def main():
+    #schedule both tasks to run concurrently
+    await asyncio.gather(
+        say_hello_async(),
+        do_something_else(),
+    )
+
+asyncio.run(main())
+
+"""
+    cmd> python do_more_tasks.py
+Starting another task...
+Finished another task!
+Hello, Async World!
+
+"""
+***********************************************************************
+- In the above modification the main() function uses "asyncio.gather()"
+to run say_hello_async() and do_something_else() concurrently. 
+- Means when the program is awaiting to complete its 2-second sleep
+it starts and potentially completes the do_something_else() function.
+Effectively doing another task during wait time.
+
+
+======Fetching Web Pages(Concurrent I/O Tasks)===========
+- Classic example to demonstrate the power of async programming. 
+- Compare fetching URLs synchronously vs asynchronously
+- Synchronous HTTP requests library, fetching two web pages in a row
+looks something like this:
+*************************************************
+#!/usr/bin/python3
+import requests
+import time
+
+start_time=time.time()
+
+def fetch(url):
+    return requests.get(url).text
+
+page1=fetch('http://example.com')
+page2=fetch('http://example.org')
+
+print(f"Done in {time.time() - start_time} seconds")
+
+"""
+    cmd>> python synchronous_url_fetching.py
+Done in 0.736382246017456 seconds
+"""
+******************************************************
+- The above code is a simple as it gets as the main part of the 
+program waits idly for each request to complete before moving 
+to the next.
+- Up efficiency with aiohttp and asyncio for aschronous HTTP
+requests🚀🚀🚀
+****************************************************************************************
+#!/usr/bin/python3
+import aiohttp
+import asyncio
+import time
+
+async def fetch_async(url, session):
+    """
+    Asynchronously fetches the content of a given URL
+
+    Args:
+        url(str): The URL to fetch
+        session(aiohttp.ClientSession):The HTTP session to use for the request
+    
+    Returns: 
+        str: The reposnse text content
+    """
+    # Use the session to make an asynchronous GET request
+    # 'async with' ensures the reponse is properly closed after use
+    async with session.get(url) as response:
+        # Returns the response body as text(waits for the response to be fully received)
+        return await response.text()
+    
+
+async def main():
+    """
+    Main asynchronous function that coordinates fetching multiple web pages concurrently
+    """
+    # Create an HTTP session that will be used for all requests.
+    # The session handles connection pooling and other optimazation.
+    async with aiohttp.ClientSession() as session:
+        # create two sesisons that will run fetch_async concurrently
+        # asyncio.create_task schedules the coroutine to run in the background
+        page1= asyncio.create_task(fetch_async('http://example.com', session))
+        page2= asyncio.create_task(fetch_async('http://example.org', session))
+
+        #Wait for bth tasks to complete simulataneously
+        #asyncio.gather runs multiple coroutines concurrently and returns their results
+        await asyncio.gather(page1, page2)
+
+
+#record the start time before running the asynchronous operations
+start_time=time.time()
+
+# Run main asynchronous function
+#asyncio.run() creates a new event loop, runs the coroutine and closes the loop
+asyncio.run(main())
+
+#Total execution time
+print(f"Done in {time.time()-start_time} seconds")
+
+"""
+    cmd>> python asynchio_url_fetching.py
+Done in 0.40828752517700195 seconds
+"""
+**************************************************************************************
+
+
+
+=======Reading Files(Concurrent I/O Tasks)=======
+- Different use case than web requests.
+- Focus on reading multiple files asynchronously. 
+- Useful when dealing with large files or I/O bound tasks that do not 
+involve network communication.
+- Reading multiple files one after the other can  significantly increase
+execution time, especially with large files.
+1. Synchronous setup---> reading one file after the other can significantly
+increase execution time, especially with large files.
+**********************************************************************
+#!/usr/bin/python3
+import time
+
+start_time=time.time()
+
+#synchronously reading multiple files
+def read_file_sync(filepath):
+    with open(filepath, 'r') as file:
+        return file.read()
+    
+#the function expects a list of files and uses a for loop to iterate through it
+def read_all_sync(filepaths):
+    return [read_file_sync(filepath) for filepath in filepaths]
+
+
+filepaths=['file1.txt', 'file2.txt']
+data=read_all_sync(filepaths)
+print(data)
+
+#get the final time the exectuion was complete
+print(f"Time Taken is: {time.time()- start_time} seconds")
+
+"""
+    cmd>> python file_read_sync.py
+['"hello world" \n', '"Welcome to New York" \n']
+Time Taken is: 0.0017499923706054688 seconds
+"""
+**********************************************************************
+
+- For the Asynchronous version we'll us the "aiofiles"---> a library 
+that provides support for asynchronous file operations.
+- Installed:
+	cmd>> uv pip install aiofiles
+- Using the lib `aiofiles` we can perform file I/O operations without
+blocking the event loop, allowing us to read multiple files concurrently.

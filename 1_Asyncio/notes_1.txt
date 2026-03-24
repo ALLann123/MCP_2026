@@ -223,3 +223,251 @@ that provides support for asynchronous file operations.
 	cmd>> uv pip install aiofiles
 - Using the lib `aiofiles` we can perform file I/O operations without
 blocking the event loop, allowing us to read multiple files concurrently.
+*********************************************************************
+#!/usr/bin/python3
+import asyncio
+import aiofiles
+import time
+
+start_time=time.time()
+
+# Asynchronously reading a single file
+async def read_file_async(filepath):
+    """
+    Asynchronously reads the entire contents of a single file
+
+    Args:
+        filepath(str) : Path to the file to read
+    
+    Returns:
+        str: The complete contents of the file as a string
+    """
+    # Use aiofiles to open the file asynchronously in read mode
+    # The 'async with' context manager ensures proper cleanup even if errors occur
+    async with aiofiles.open(filepath, 'r') as file:
+        # Asynchronously read the entire file contents
+        # This doesnt block the event loop while waiting for I/O operations
+        return await file.read()
+    
+async def read_all_async(filepaths):
+    """
+    Asynchronously reads multiple files concurrently
+
+    Args:
+        filepaths(list): List of file paths to read
+
+    Returns: 
+        List: List of file contents in the same order as input filepaths
+    """
+    # Create a list of coroutine tasks, one for each file to read
+    # Each task will run read_file_asnc() for its respective file
+    tasks = [read_file_async(filepath) for filepath in filepaths]
+
+    # Run all tasks concurrently and wait for all to complete
+    # asyncio.gather() runs tasks in parallel and returns results in order
+    # This is more efficient than reading files sequentially
+    return await asyncio.gather(*tasks)
+
+# Running the async function
+async def main():
+    """
+    Main entry point for the async program.
+    Orchestrates reading multiple files asynchronously
+    """
+    # Define the list of files to read
+    filepaths=['file1.txt', 'file2.txt']
+
+    # Read all files concurrently using the async function
+    # This will execute both file reads in parallel
+    data =  await read_all_async(filepaths)
+
+    # Print the contents of all files (list of strings)
+    print(data)
+
+# Call the entry point of our script
+asyncio.run(main())
+print("\n")
+print(f"Time taken: {time.time()-start_time} seconds")
+
+"""
+    cmd>> python file_read_async.py
+['"hello world" \n', '"Welcome to New York" \n']
+
+
+Time taken: 0.0610048770904541 seconds
+
+"""
+*********************************************************************
+- By using aiofiles and asyncio.gather, allows for concurrent reading 
+of multiple files. 
+- Above version reduces execution time compared to the synchronous
+version, which reads each file one after the other.
+- By performing I/O operations concurrently we can improve the efficiency
+of programs that need to handle multiple file operations.
+
+==========Hybrid Approach===========
+- Most times we cant escape synchronous functions but we want to enjoy the ride
+***********************************Mix_Them*******************************
+#!/usr/bin/python3
+import asyncio
+import time
+
+def sync_task():
+    """
+    Synchronous Function simulates a long-running task
+    This function will block the thread it runs on for 5 seconds
+
+    NOTe: In an async application, running this directly would block
+    the event loop, 
+    preventing other async tasks from running concurrently
+    """
+    print("Starting a slow sync task...")
+    time.sleep(5)  #Simulates a long-running I/O operation or CPU intensive task
+    # This is a blocking call
+    print("Finished the slow task.")
+
+async def async_wrapper():
+    """
+    Async wrapper that offloads thhe synchronous blocking function 
+    to a separate thread.
+    This allows the blocking operation to run without blocking 
+    the async event loop
+
+    How it works:
+    1. Gets the current running event loop
+    2. Uses run_in_executor() to execute the synchronous function
+    in thread pool
+    3. The 'await' yields control back to the event loop while the
+    thread runs
+    4. The event loop can continue running other async tasks during the 5-second
+    sleep
+    """
+    # Get the currently running asyncio event loop
+    # This is the loop that manages all async tasks
+    loop = asyncio.get_running_loop()
+
+    # Run the Synchronous function in a thread pool executor
+    # -First Parameter: executor(None= Use default ThreadPool executor)
+    # -Second Paramter: Function to execute (sync_task)
+    # -Additional arguments can be passed to sync_task after the function name
+    # Creates a thread, runs sync_task() there and returns a future that
+    # will complete when the thread finishes. The 'await' makes this coroutine
+    # wait for the thread to complete without blocking the event loop
+    await loop.run_in_executor(None, sync_task)
+
+async def main():
+    """
+    Main async entry point that orchestrates concurrent execution
+    Uses asyncio.gather() to run multiple async tasks concurrently
+    """
+    # asyncio.gather() runs multiple awaitable objects concurrently
+    # It returns when all tasks are complete
+    # Even though we only have one wrapper here, this pattern allows easily
+    # adding mmore concurrent tasks in the future(e.g.m network requests, file I/O)
+    await asyncio.gather(
+        async_wrapper(),  #Offloads the blocking sync_task to a thread
+        # Additional async tasks can be added here to run concurrently
+        # For example:
+        # async_network_request(),
+        # async_file_operation(),
+    )
+
+# Entry point to the script
+# asyncio.run() creates a new event loop, runs the main() coroutine, and cleans uo
+asyncio.run(main())
+
+"""
+    cmd>>python hybrid_approach.py
+Starting a slow sync task...
+Finished the slow task.
+
+"""
+**************************************************************************************
+
+======Why the above Approach is needed?============
+1. Intergration of legacy code: When you encounter code that is legacy
+and synchronous in nature
+2. Working with Blocking I/O: Some third party libraries are only offer
+synchronous functions. Operation offloaded to a thread, freeing event loop
+3.  CPU-Bound Tasks: Using the run_in_executor method allows these tasks
+to coexist with I/O-bound asynchronous tasks.
+
+=====The Future() Object=======
+- Is a low-level awaitable object that represents an eventual results of
+an asynchronous operation. 
+- when declared we essentially declaring a placeholder for a result that
+will be available at some point in the future.
+- Futures are crucial part of asyncio library, allowing for fine-grainded 
+control over asynchronous operations.
+===Understanding Futures====
+1. Role: Provide a way to manage state of an asynchronous operation:pending,
+finished(with a result), or failed(with an exception)
+2. Usage: Is essential for interfacing with lower-level async APIs or
+when building complex asynchronous systems.
+
+===Working with futures===
+Key Methods:
+1. set_result(result): Sets the result of the Future. Will mark as done
+and notify all awaiting coroutines
+2. set_exception(exception): Sets an exception as the result of the Future
+3. add_done_callback(callback): Adds a callback function to be called when
+the future is done(either completed with a result or an exception)
+4. result(): Returns the results to the future. If future is not done
+it will raise an InvalidStateError
+5. done(): Returns true if the future is done. A future is considered done
+if it has a result or an exception.
+***************************************************************************
+#!/usr/bin/python3
+import asyncio
+
+# A function to simulate an asynchronous operatiion using a Future
+async def async_operation(future, data):
+    await asyncio.sleep(1) # Simulate some async work with a delay
+
+    # Set the result exception based on the input data
+    if data == "success":
+        future.set_result("Operation succeeded")
+    else:
+        future.set_exception(RuntimeError("Operation failed"))
+
+# A callback function to be called when the Future is done
+def future_callback(future):
+    try:
+        print("Callback: ", future.result()) # Attempt to print the result
+    except Exception as exc:
+        print("Callback: ", exc)  #Print the excetion if there was one
+
+
+async def main():
+    # Create a Future object
+    future = asyncio.Future()
+
+    # Add a callback to the future
+    future.add_done_callback(future_callback)
+
+    # start the synchronous operation and pass the future
+    await async_operation(future, "success") # Try changing "success" to anything else to simulate a failure
+
+    # check if the future is done and print its result
+    if future.done():
+        try:
+            print("Main:", future.result)
+        except Exception as exc:
+            print("Main: ", exc)
+
+# Run the main coroutine
+asyncio.run(main())
+
+"""
+    cmd>> python future_asyncio.py
+Main: <built-in method result of _asyncio.Future object at 0x00000157E2B457F0>
+Callback:  Operation succeeded
+
+"""
+***************************************************************************
+
+====Conclusion====
+- Asyncio improves python applications performance significantly.(network drive programs)
+- Developers are able to write efficient, non-blocking code that
+can handle thousands of simultaneous connections with ease.
+

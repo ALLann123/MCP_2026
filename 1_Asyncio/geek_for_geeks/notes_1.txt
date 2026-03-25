@@ -1,0 +1,145 @@
+=========Asyncio in Python========
+- A python library that is used for concurrent programming
+- Include the use of async iterator in Python.
+- Useful for high-perfomance: 
+    > Network
+    > Web Servers
+    > Database connection libraries
+    > Distributed task queues
+
+=====More========
+- "async" keyword is used.
+- Will use await when triggering the asyncio.sleep(1)
+**********************************************
+#!/usr/bin/python3
+import asyncio
+
+async def fn():
+    print('This is')
+    await asyncio.sleep(1)
+    print('asynchronous programming')
+    await asyncio.sleep(1)
+    print('and not multi-threading')
+
+asyncio.run(fn())
+
+"""
+    cmd> python basic.py
+This is
+asynchronous programming
+and not multi-threading
+
+"""
+**********************************************
+
+
+=======Async event loop in Python======
+-  'await fn2()' means to wait until the other function finishes
+executing before proceding with current execution.
+*********************************************
+#!/usr/bin/python3
+import asyncio
+
+async def fn():
+    print('one')
+    await asyncio.sleep(1)
+    await fn2()
+    print("four")
+    await asyncio.sleep(1)
+    print('five')
+    await asyncio.sleep(1)
+
+async def fn2():
+    await asyncio.sleep(1)
+    print("two")
+    await asyncio.sleep(1)
+    print("three")
+
+asyncio.run(fn())
+*********************************************
+
+- If we want the program to run in asynchronous, in the actual
+order of execution we'll need to make tasks in order to 
+accomplish this.
+- Other functions will begin to run anytime if there is any
+free time using asyncio.create_task(fn2())
+********************************************
+#!/usr/bin/python3
+import asyncio
+
+async def fn():
+    task = asyncio.create_task(fn2())
+    print('one')
+    print('four')
+    await asyncio.sleep(1)
+    print('five')
+    await asyncio.sleep(1)
+
+async def fn2():
+    #await asyncio.sleep(1)
+    print('two')
+    await asyncio.sleep(1)
+    print('three')
+
+asyncio.run(fn())
+*********************************************
+
+
+======I/O- bound tasks using asyncio.sleep()=========
+- Each function below 'wait' for a different amount of time
+to simulate varying levels of work.
+- Tasks start concurrently, perform work asynchronously and then 
+complete in parallel.
+*****************************************************
+#!/usr/bin/python3
+import asyncio
+
+async def func1():
+    print("function 1 started...")
+    await asyncio.sleep(2)
+    print("Function 1 Ended")
+
+async def func2():
+    print("Function 2 started")
+    await asyncio.sleep(3)
+    print("Function 2 Ended")
+
+async def func3():
+    print("Function 3 started")
+    await asyncio.sleep(1)
+    print("Function 3 Ended")
+
+async def main():
+    L=await asyncio.gather(
+        func1(),
+        func2(),
+        func3(),
+    )
+    print("Main Ended....")
+
+
+asyncio.run(main())
+
+"""
+    cmd>python parallel.py
+function 1 started...
+Function 2 started
+Function 3 started
+Function 3 Ended
+Function 1 Ended
+Function 2 Ended
+Main Ended....
+"""
+******************************************************
+
+
+======Differnece Between Async and Multithreading=======
+1. Async allows only one part of a program to run at a specific
+time.
+2. In multi-threading or multi-processing, all three functions
+run concurrently without waiting for each other to finish.
+NOTE: We declare specific functions using the "async" keyword
+and the Asyncio python library helps manage the asynchronous
+behavior.
+
+

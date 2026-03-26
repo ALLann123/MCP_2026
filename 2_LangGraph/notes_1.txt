@@ -1,0 +1,48 @@
+==========LangGraph=========
+- Is a powerful framework for orchestarting complex workflows, allowing
+you to define sequences of operations(nodes) and how they connect(edges)
+to form a complete application.
+- Framework handles interactions:
+	> Large Language Models(LLMs)
+	> External APIs
+	> Custom functions----> MCP servers---> Tools
+- What to expect:
+a. Fundamental concepts of constructing a graph
+b. Define state of the graph
+c. Adding simple python functions as nodes
+d. Connecting them with the edges
+e. Setting a starting point
+f. Compiling it.
+g. Add external tools(MCP Server):
+	> TavilySearchResults
+	> Weather App
+- demonstrate how to wrap a custom function into a tool.
+
+
+====Core Concepts: Agent's Blueprint====
+- Let's understand the fundamental components:
+1. Graph: Master plan for your AI agent. Its the blueprint for your
+application's workflow, a collection of interconnected nodes and edges
+2. Nodes: Are doers or steps in your workflow. Each Node performs a
+specific action or represents an AI agent. Nodes are increadibly versative:
+	> An LLM call
+	> A tool invocation(e.g.m a search API, Calculator)
+	> A custom python function
+	> Another LangChain runnable
+3. Edges: Pathways that connect your nodes, defining how your worklflow
+progresses. One node completes its actions, an edge determines which
+node executes next.
+Types of edges:
+	> Conditional Edges: Decision points. Based on ouput the node, the graph
+can choose to go down different paths (to different subsequent nodes)
+	> Direct Edges: Straightforward connections; the workflow simply moves
+from one node directly to the next.
+4. State: Individual nodes operate independently, real-world AI apps need
+to maintain information throughout a conversation or task. The "graph state"
+is shared memory between nodes.
+5. Entry Point(START): Special node marks where your graphs execution begins
+Think of it as the starting line of your agents journey
+6. Finish Point(END): Conclusion of a specific path with your workflow.
+
+
+

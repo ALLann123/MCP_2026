@@ -1,0 +1,77 @@
+=======What is MCP?==========
+- Is a way of connecting your client(co-pilot, cursor, claude desktop, Agent) 
+to tools e.g Db, Email, or internal documentation.
+- MCP provides a common language to connect and build tools
+to be used by agents.
+Go to:
+	cursor.directory/mcp
+Then:
+	 mcp.run(transport="streamable-http")
+The transport is a method that is used to send data between the
+client and the server in our case http.
+When testing locally use:
+	mcp.run(transport = "stdio")
+
+
+===========Debugging an MCP Server============
+- We utilize POST Man for testing the endpoints
+- Not tested as traditional restful APIs
+- An easier🥳🎉way is to use inspector from anthropic
+	cmd> npx @modelcontextprotocol/inspector
+
+=========Where to test CLient===========
+- We can use:
+	> Claude Desktop
+	> Cursor
+	> Github Copilot on VS code
+- Lets use the Copilot
+	ctrl + alt + I              ------> Enables chat
+- Now on the Chat click the tool icon
+	- Add MCP
+	- Give it the URL
+	- Give it the name
+- Opens the json which is for tools Status:
+	> Running
+	> Restart
+	> Stop
+We can also add a tool from here
+- Another way to access it we can view in our current local
+virtual environment in the folder
+	".vscode"
+
+
+====================Current Setup==============================
+- MCP server runing on(server.py):
+	http://0.0.0.0:1000/mcp      ----> listening on all interfaces
+> We have coded it using FastMCP library🚀🚀
+> Tool is Tavily tool
+> Typing library to force the required input for the LLMs
+> In the mcp.run "transport="streamable-http" for HTTP streaming
+* Modify use of Asynchronous programming to allow multiple 
+concurrent requests.
+
+- Now we need a way to test our tool is working.
+Run inspection----> developed by anthropic:
+	cmd> npx @modelcontextprotocol/inspector
+url will spin the UI at:
+	` http://localhost:6274/?MCP_PROXY_AUTH_TOKEN=<authenitication_token_here>`	
+will also automatically open the browser to the UI.
+> On inspection we need to add our mcp:
+	- Set transport type to Streamable HTTP-----> we had set this earlier in the server.py
+	- url add ther url our server is listening on: "http://0.0.0.0:1000/mcp"
+	- Click connect, it will highlight green meaning connection worked
+	- Click tools section select our tool then send in a request to test it
+	- When you get success it works🎉🥳🥳🥳☄☄
+* Import logging in server.py to identify where a tool fails.
+
+- Now the client: the AI that will connect to our MCP server to test the Tavily
+> We will use Copilot on VS code to test our tool
+	- Add our tool----> click HTTP
+	- Provide URL for our MCP server: http://0.0.0.0:1000/mcp
+	- Now give it a name
+	- Vs Code will open a json created locally in our virtual environment 
+showing tool status if connected. 
+	- Now test it and will utilized it
+PROB: Web pages on the internet may contain prompt injection.
+
+

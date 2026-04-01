@@ -1,0 +1,179 @@
+=========Model COntext Protocol(MCP)==========
+QUOTE: What I cannot create I simply dont understand!!
+- Is an open protocol that standadizes how applications provide
+tools and context to LLMs
+- LangChain agents can use tools defined on MCP servers using:
+	"langchain-mcp-adapters" library
+QUick Start:
+- installation:
+	cmd> uv pip install langchain-mcp-adapters
+The library enables agents to use tools defined across one or more
+MCP servers.
+
+
+======Custom MCP Servers======
+- To create a custom MCP server, use the FastMCP library:
+	cmd> uv pip install fastmcp
+- Different clietn<--> server communication
+
+===========1. STDIO Transport================
+- Communication happens through:
+	> stdin(input)
+	> stdout(output)
+- The client spawns the server as a subprocess
+********************************
+{
+    "math": {
+        "transport": "stdio",
+        "command": "python",
+        "args": ["mcp_server.py"]
+    }
+}
+********************************
+- The server stands it:
+********************************
+mcp.run(transport="stdio")
+********************************
+Pros:
+a. simple to setup
+b. No networking required
+c. Good for:
+	> local tools
+	> CLI-based workflows
+	> quick prototyping
+
+
+============2. HTTP Transport==========
+- MCP server runs as a web server
+- Client communicates via HTTP requests
+Server:
+*********************************
+mcp.run(
+    transport="streamable-http",
+    host="0.0.0.0",
+    port=8000
+)
+*********************************
+Client:
+*********************************
+{
+    "web-search": {
+        "transport": "http",
+        "url": "http://localhost:8000/mcp"
+    }
+}
+*********************************
+Pros:
+a. Stable:
+	> No stdout corruption
+	> No encoding issues
+b. Easy debugging
+	> Hit endpoint with postman or 🎇Inspector🎊🎊
+	> see logs clearly
+c. Works with real services:
+	> APIs(Tavily, DBs, etc)
+	> remote deployment
+d. Production-ready
+e. Supports multiple clients
+
+===Cons===
+- Requires running a server
+- Slightly more setup
+- Needs port management
+
+===When to use HTTP===
+- Using APIs(Like Tavily)
+- building real apps
+- debugging matters
+- debugging remotely
+
+
+==============3. WebSocket Transport(conceptual)==============
+What it is?
+- Persistent connection(like chat apps)
+Status in MCP:
+- Not commonly used in FastMCP yet
+- Mostly theoretical/future use
+
+
+==========Examples=========
+************************server-side***********************************
+#!/usr/bin/python
+from fastmcp import FastMCP
+
+mcp = FastMCP("Math")
+
+@mcp.tool()
+def add(a: int, b: int)-> int:
+    """Add two numbers"""
+    return a + b
+
+@mcp.tool()
+def multiple(a: int, b: int) -> int:
+    """Multiply two numbers"""
+    return a * b
+
+if __name__=="__main__":
+    mcp.run(transport="stdio")
+**********************************************************************
+
+***********************************client-side************************************
+#!/usr/bin/python3
+from langchain_mcp_adapters.client import MultiServerMCPClient
+from langchain.agents import create_agent
+from dotenv import load_dotenv
+from langchain_groq import ChatGroq
+import os
+import asyncio
+
+# loading .env file in the code
+load_dotenv()
+
+# llm setup
+llm = ChatGroq (
+    temperature=0.3,
+    groq_api_key=os.getenv("GROQ_API_KEY"),
+    model_name="llama-3.3-70b-versatile"
+)
+
+async def main():
+    client = MultiServerMCPClient(
+        {
+            "math": {
+                "transport": "stdio",
+                "command": "python",
+                "args": [
+                    "C:/Users/PC/Desktop/golang/2026/MCP_Adapter/mcp_server.py"
+                ],
+            }
+        }
+    )
+
+    tools = await client.get_tools()
+    agent = create_agent(
+        llm,
+        tools,
+        system_prompt="""You are a careful math assistant.
+
+    You MUST call one tool at a time.
+    Do NOT nest tool calls.
+    First compute intermediate results, then use them in the next step.
+    """
+    )
+
+    math_response = await agent.ainvoke(
+        {"messages": [{"role":"user", "content" : "What's (3+5) x12"}]}
+    )
+
+    print(math_response)
+
+    print("\n***************************************")
+
+    for msg in math_response["messages"]:
+        if msg.type == "ai" and msg.content:
+            print("\n🤖 Answer:\n")
+            print(msg.content)
+
+if __name__=="__main__":
+    asyncio.run(main())
+*********************************************************************

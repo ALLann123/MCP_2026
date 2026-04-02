@@ -1,0 +1,18 @@
+========OpenClaw======
+- Software we install in a computer we own just not in our main computer and 
+runs in the background
+- Connects chat applications(Telegram, GPT) to our LLMs.(Gateway)
+- Can run on anything---> raspberry
+- Connect to the tools.
+- Manage permissions---> Critical even though limits autonomy
+
+=====OpenClaw Skills=====
+- Ways we can provide extrafunctionality for our AI assistant
+	`clawHub`
+- The AI assistant(OpenClaw) can go to the clawHub find the skill and install it
+- If cant find the skill write it and run.
+- OpenClaw starts to evolve and becomes more useful the more you use it.
+NOTE: * Can be compromised.
+
+
+

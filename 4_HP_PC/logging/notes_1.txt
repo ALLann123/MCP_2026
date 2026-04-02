@@ -1,0 +1,185 @@
+=========WHat is Logging?==========
+- Provides a way to:
+	> Track what your program is doing
+	> Debug errors
+	> Monitor applications in production
+N/B: Instead of `print` we use the built-in logging module
+
+======Logging  levels=========
+DEBUG: Detailed info for developers
+INFO: General events
+WARNING: Something unexpected
+ERROR: Something failed
+CRITICAL: Serious failure
+
+
+====3. Basic  Logging Example========
+The code:
+#!/usr/bin/python3
+import logging
+
+#detailed info to developers
+logging.basicConfig(level=logging.DEBUG)
+
+
+logging.debug("Debug Message")
+
+#General events
+logging.info("Info Message")
+
+#something unexpected
+logging.warning("Warning message")
+
+#something failed
+logging.error("Error Message")
+
+#Serious failure
+logging.critical("Critical Message")
+**********************************************************
+
+=====4. Better Formating=========
+Code block:
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s"
+)
+- Above will produce the output:
+	2026-03-22 14:00:00 - INFO - App started
+****************************************************
+#!/usr/bin/python3
+import logging
+
+#detailed info to developers
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s -%(levelname)s - %(message)s"
+)
+
+
+logging.info("Info Message")
+
+"""
+    logging>python better_formating.py
+2026-03-22 17:48:49,571 -INFO - Info Message
+
+"""
+*******************************************************
+
+
+============5. Logging to a File=================
+- We can also direct to a file the output of the logs
+*********************************************************
+#!/usr/bin/python3
+import logging
+
+logging.basicConfig(
+    filename="app.log",
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s"
+)
+
+logging.debug("Debug message")
+logging.info("Info message")
+logging.warning("Warning message")
+logging.error("Error Message")
+
+
+"""
+(2_Open-claw_Agents) \logging>python to_file.py
+
+(2_Open-claw_Agents) \logging>more app.log
+2026-03-22 17:53:21,517 - INFO - Info message
+2026-03-22 17:53:21,517 - WARNING - Warning message
+2026-03-22 17:53:21,517 - ERROR - Error Message
+
+"""
+************************************************************
+
+
+=========6. Using Loggers=============
+- Is considered best practise
+******************************************
+#!/usr/bin/python3
+import logging
+
+logging.basicConfig(level=logging.DEBUG)
+
+logger=logging.getLogger(__name__)
+
+logger.info("This is from a module")
+
+"""
+    logging>python loggers.py
+INFO:__main__:This is from a module
+
+"""
+******************************************
+
+
+========Project 1: CLI Calculator with logging==========
+Learn:
+	> Logging levels
+	> Error Handling
+	> Writing logs to file
+
+****************************************************************
+#!/usr/bin/python3
+import logging
+
+logging.basicConfig(
+    filename="calculator.log",
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",  
+)
+
+
+def add(a, b):
+    logging.info(f"Adding {a} + {b}")
+    return a+b
+
+def divide(a, b):
+    try:
+        result=a/b
+        logging.info(f"Dividing {a}/{b}")
+        return result
+    except ZeroDivisionError:
+        logging.error("Attempted Division by zero", exc_info=True)
+        return None
+    
+def main():
+    logging.info("Calculator started")
+
+    print("1. Add\n 2.Divide")
+    choice=input("Choose option: ")
+
+    a=float(input("Enter first number: "))
+    b=float(input("Enter Second number:"))
+
+    if choice == "1":
+        print("Result: ", add(a,b))
+    elif choice=="2":
+        print("Result: ", divide(a,b))
+    else:
+        logging.warning("Invalid choice entered")
+
+if __name__=="__main__":
+    main()
+
+"""
+(2_Open-claw_Agents)logging>python calc_logging.py
+1. Add
+ 2.Divide
+Choose option: 2
+Enter first number: 32
+Enter Second number:0
+Result:  None
+
+(2_Open-claw_Agents)logging>more app.log
+2026-03-22 17:53:21,517 - INFO - Info message
+2026-03-22 17:53:21,517 - WARNING - Warning message
+2026-03-22 17:53:21,517 - ERROR - Error Message
+"""
+****************************************************************
+
+
+

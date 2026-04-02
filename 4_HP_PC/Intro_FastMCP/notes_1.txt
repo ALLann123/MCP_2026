@@ -1,0 +1,323 @@
+Tutorial:https://www.freecodecamp.org/news/how-to-build-your-first-mcp-server-using-fastmcp/
+======MCP======
+- Provides AI with structured access to information and actions.
+- FastMCP is the easiest and fastest framework for building MCP servers in python.
+- Hides all the complex protocol details and lets you focus on your logic.
+
+===What is MCP?===> Abstraction
+- Is a standard protocol that allows language models to talk to external systems
+in a secure and consistent way. 
+- LIke a GUI for LLMs.
+- Main functions of an MCP:
+	> It can expose data as resources(similar to GET endpoints)
+	> Provide actions through tools(similar to POST requests)
+	> Define prompts that guide how the model interacts with data or users.
+
+====Why use FastMCP=====
+- Its a production-ready framework with enterprise authentication, client libraries,
+testing tools and automatic API generation.
+- Supports deployment to cloud infrastructures(VPS)
+- Developer friendly i.e create MCP server with just a few lines of Python.
+
+
+===Creating Your first MCP Server====
+- Using uv to install dependancies. 
+	Ps>> uv pip install fastmcp
+- Now get started:
+> Every MCP server starts with the FastMCP class. The classs represents your
+application and manages your tools, resources and prompts.
+- Server thats adds two numbers together.
+-*******************my_first_server.py********************************
+#!/usr/bin/python3
+from fastmcp import FastMCP
+
+#create an object based on the class
+mcp=FastMCP("Demo Server🚀")
+
+#tool decorator---> LLM now knows its a tool and the format expected for inputs and the output
+@mcp.tool
+def add(a: int, b: int)-> int:
+    #Docstring highlighting tool usage
+    """Add two numbers and return the results"""
+    return a+b
+
+if __name__=="__main__":
+    #run the server
+    mcp.run()
+*********************************************************************
+- We have created the server that when a client(LLM) calls it will just run the
+tool called add and returns the result.
+
+=====RUnning the server===
+Run lacally on terminal:
+	Ps>> fastmcp run my_first_server.py
+- The above command starts the MCP server.
+---------------------------------------------OUTPUT---------------------------------------------------------------
+(2_Open-claw_Agents) J:\2_Open-claw_Agents\Intro_FastMCP> fastmcp run my_first_server.py
+
+
+                   ┌──────────────────────────────────────────────────────────────────────────────┐
+                   │                                                                              │
+                   │                                                                              │
+                   │                         ▄▀▀ ▄▀█ █▀▀ ▀█▀ █▀▄▀█ █▀▀ █▀█                        │
+                   │                         █▀  █▀█ ▄▄█  █  █ ▀ █ █▄▄ █▀▀                        │
+                   │                                                                              │
+                   │                                                                              │
+                   │                                FastMCP 3.1.1                                 │
+                   │                            https://gofastmcp.com                             │
+                   │                                                                              │
+                   │                    🖥   Server:      Demo Server🚀, 3.1.1                      │                    
+                   │                    🚀 Deploy free: https://fastmcp.cloud                     │
+                   │                                                                              │
+                   └──────────────────────────────────────────────────────────────────────────────┘
+
+
+[03/22/26 10:00:21] INFO     Starting MCP server 'Demo Server🚀' with transport 'stdio'                transport.py:183
+------------------------------------------------------------------------------------------------------------------
+- We can also use HTTP or SSE transports for web-based deployment. E.G:
+Run over HTTP use:
+	`mcp.run(transport="http", host="127.0.0.1", port=8000, path="/mcp")`
+- Once the server is running clients can connect and call the add tool remotely.
+
+
+====Adding more tools=====
+- FastMCP tools are simple python functions that you decorate with @mcp.tool
+- We can add as many as we want. E.g
+Multiplication tool
+********************************************
+@mcp.tool
+def multiply(a: float, b: float)-> float:
+    """Multiply two numbers"""
+    return a * b
+********************************************
+- Now you can run the server again, and clients will have access to both the 
+`add` and `multiply` tools.
+- FastMCP automatically generates schemas based oon your function signatures and
+docstrings, making it easy for clients to understand your API.
+
+
+======Adding Resources===========
+- Resources in MCP represents read-only data that clients can access.
+- Create static resources or dynamic templates that take parameters.
+E.G: Expose a version number or user profile:
+****************************************************
+#always returns the version number
+@mcp.resource("config://version")
+def get_version():
+    return "1.0.0"
+
+#dynamically fetches a user profile based on the ID provided--> normally in a db would have made a query request to the endpoint
+@mcp.resource("user://{user_id}/profile")
+def get_profile(user_id: int):
+    return {"name":f"User {user_id}", "status":"active"}
+*******************************************************
+
+======using Context in tools============
+- FastMCP allows you to access the session context withing any tool, resource or
+prompt by including a ctx:Context parameter.
+- Context gives you powerful capabilities like:
+	> logging
+	> LLM sampling
+	> Progress tracking
+	> Resource access
+- This tool logs a message reads a resource and then asks the client's language
+model to summarise it.
+- Context makes your MCP tools smarter and more interactive
+
+
+===========Connecting with an MCP Client=============
+- Once the server is running we can connect to it using:
+	`fastmcp.Client` class
+- The client can communicated via STDIO, HTTP, or SSE and can even run in-memory
+for testing:-
+	> STDIO(Standard Input/Output): The client communicates with the server
+through standard input and output streams.---> Used in local processes
+	> HTTP(Hypertext Transfer Protocol): the client communicates with the
+server over HTTP requests/responses. Allows server to run as a remote web service
+	> SSE(Server-Sent Events): A streaming protocol over HTTP that allows
+the server to push real-time events to the client. 
+*************************first_client.py***********************************
+#!/usr/bin/python3
+from fastmcp import Client
+import asyncio
+
+async def main():
+    async with Client("my_first_server.py") as client:
+        tools=await client.list_tools()
+        print("Available tools:", tools)
+        result=await client.call_tool("add", {"a":5, "b":7})
+        print("Result: ", result.content[0].text)
+
+asyncio.run(main())
+
+**************************************************************************
+- You can also connect to multiple servers using a standard MCP configuration file
+making it easy to build complex systems that interact with several services simultaneously.
+
+=============================Test the above Setup===============
+- Start our server to run:
+	Ps>> .venv\Scripts\activate                    //activate the python UV environment
+	Ps>> python my_first_server.py
+- Now run our client to query our server:
+	Ps>> python first_client.py
+Output:
+(2_Open-claw_Agents) J:\2_Open-claw_Agents\Intro_FastMCP>python first_client.py
+Available tools: [Tool(name='add', title=None, description='Add two numbers and return the results', inputSchema={'additionalProperties': False, 'properties': {'a': {'type': 'integer'}, 'b': {'type': 'integer'}}, 'required': ['a', 'b'], 'type': 'object'}, outputSchema={'properties': {'result': {'type': 'integer'}}, 'required': ['result'], 'type': 'object', 'x-fastmcp-wrap-result': True}, icons=None, annotations=None, meta={'fastmcp': {'tags': []}}, execution=None), Tool(name='multiply', title=None, description='Multiply two numbers', inputSchema={'additionalProperties': False, 'properties': {'a': {'type': 'number'}, 'b': {'type': 'number'}}, 'required': ['a', 'b'], 'type': 'object'}, outputSchema={'properties': {'result': {'type': 'number'}}, 'required': ['result'], 'type': 'object', 'x-fastmcp-wrap-result': True}, icons=None, annotations=None, meta={'fastmcp': {'tags': []}}, execution=None), Tool(name='summarize', title=None, description=None, inputSchema={'additionalProperties': False, 'properties': {'uri': {'type': 'string'}}, 'required': ['uri'], 'type': 'object'}, outputSchema=None, icons=None, annotations=None, meta={'fastmcp': {'tags': []}}, execution=None)]
+Result:  12
+________________________________________________________________
+
+
+==========Authentication and Security=========
+- FastMCP library has built-in support for enterprise-grade authentication
+provides such as Google, Github, Microsoft Azure, AuthO and workOS.
+- Allowing authenticated clients to access your server.
+- FastMCP handles:
+	> TOkens,
+	> Refreshers
+	> Error Handling
+
+
+==========Deploying your MCP Server========
+- Can be deployed anywhere:
+	> Locally using fastmcp run command
+	> FastMCP cloud which provided instant HTTPS endpoints and built-in authentication.
+- If you prefer to self host use HTTP or SSE transport to  server your MCP endpoint
+from your own infrastructue. 
+Simple command:
+	`mcp.run(transport="http", host="0.0.0.0", port=8080)`
+- Once deployed your MCP server is ready to connect with LLMs, web clients
+or automation workflows.🥳🥳🎊🎊
+FastMCP cloud:
+	https://horizon.prefect.io/
+- We logged in with our github
+
+=======Using MCP Server with an LLM Application=========
+- Once MCP server is running next step is to connect it to an LLM.
+- Allows the LLM to securely call your server's functions, read resources, 
+and perform actions as part of a conversation.
+- To connect to an LLM application, you first define your MCP configuration file.
+- File lists:
+	> Available servers	
+	> Connection methods
+	> Any authentiacation requirements
+- Once configured, the LLM can automatically discover yur MCP tools and call
+them when needed.
+Example:
+User> SUmmarize the latest article
+LLM:
+	* Calls the summarize tool
+	* Process the result
+	> Respond with output
+
+- If using custom frameworks like Langchain(we use this) you can register
+ your MCP server as an external tool. 
+LLM interacts with it through the MCP client library.
+Example:
+-------------------------------Code----------------------------------
+#!/usr/bin/python3
+from fastmcp import Client
+from langchain_groq import ChatGroq
+from dotenv import load_dotenv
+import asyncio
+import os
+
+load_dotenv()
+
+async def main():
+    async with Client("http://127.0.0.1:8080/mcp") as client:
+        
+        # ✅ correct usage
+        result = await client.call_tool("add", {"a": 10, "b": 5})
+        mcp_result = result.content[0].text
+
+        print("MCP Result:", mcp_result)
+        print()
+
+        llm = ChatGroq(
+            temperature=0.3,
+            groq_api_key=os.getenv("GROQ_API_KEY"),
+            model_name="llama-3.3-70b-versatile"
+        )
+
+        response = llm.invoke(
+            f"""
+            You are an AI assistant using MCP tools.
+            The sum of 10 and 5 is {mcp_result}.
+            Explain how MCP helps with this integration.
+            """
+        )
+
+        print("AI:", response.content)
+
+asyncio.run(main())
+----------------------------------------------------------------------------
+When We run the setup(This is happening on localhost):
+Server first:
+
+(2_Open-claw_Agents) J:\2_Open-claw_Agents\Intro_FastMCP>python my_first_server.py
+
+
+         ┌──────────────────────────────────────────────────────────────────────────────┐
+         │                                                                              │
+         │                                                                              │
+         │                         ▄▀▀ ▄▀█ █▀▀ ▀█▀ █▀▄▀█ █▀▀ █▀█                        │
+         │                         █▀  █▀█ ▄▄█  █  █ ▀ █ █▄▄ █▀▀                        │
+         │                                                                              │
+         │                                                                              │
+         │                                FastMCP 3.1.1                                 │
+         │                            https://gofastmcp.com                             │
+         │                                                                              │
+         │                    🖥   Server:      Demo Server🚀, 3.1.1                      │          
+         │                    🚀 Deploy free: https://fastmcp.cloud                     │
+         │                                                                              │
+         └──────────────────────────────────────────────────────────────────────────────┘
+
+
+[03/22/26 13:32:42] INFO     Starting MCP server 'Demo Server🚀' with transport    transport.py:273
+                             'http' on http://127.0.0.1:8080/mcp
+←[32mINFO←[0m:     Started server process [←[36m15956←[0m]
+←[32mINFO←[0m:     Waiting for application startup.
+←[32mINFO←[0m:     Application startup complete.
+←[32mINFO←[0m:     Uvicorn running on ←[1mhttp://127.0.0.1:8080←[0m (Press CTRL+C to quit)
+←[32mINFO←[0m:     127.0.0.1:51143 - "←[1mPOST /mcp HTTP/1.1←[0m" ←[32m200 OK←[0m
+←[32mINFO←[0m:     127.0.0.1:51144 - "←[1mPOST /mcp HTTP/1.1←[0m" ←[32m202 Accepted←[0m
+←[32mINFO←[0m:     127.0.0.1:51145 - "←[1mGET /mcp HTTP/1.1←[0m" ←[32m200 OK←[0m
+←[32mINFO←[0m:     127.0.0.1:51146 - "←[1mPOST /mcp HTTP/1.1←[0m" ←[32m200 OK←[0m
+←[32mINFO←[0m:     127.0.0.1:51147 - "←[1mPOST /mcp HTTP/1.1←[0m" ←[32m200 OK←[0m
+←[32mINFO←[0m:     127.0.0.1:51149 - "←[1mDELETE /mcp HTTP/1.1←[0m" ←[32m200 OK←[0m
+
+________________As we can see above our client hit the server endpoint_____________________
+
+The client when ran--> Note we are using groq
+
+(2_Open-claw_Agents) J:\2_Open-claw_Agents\Intro_FastMCP>python llm_interact.py
+MCP Result: 15
+
+AI: As an AI assistant using MCP (Model for Composition and Projection) tools, I can break down the process of calculating the sum of 10 and 5 to demonstrate how MCP facilitates this integration.
+
+MCP is a framework that enables the composition and projection of multiple models, allowing for the integration of different knowledge representations and reasoning mechanisms. In this case, the MCP framework helps with the integration of basic arithmetic operations, such as addition.
+
+Here's how MCP assists with the calculation:
+
+1. **Knowledge Representation**: The MCP framework represents the knowledge of basic arithmetic operations, including addition, as a set of rules and relationships. This knowledge is encoded in a model that can be composed with other models to perform calculations.
+2. **Model Composition**: When the problem "sum of 10 and 5" is presented, the MCP framework composes the relevant models, including the addition model, to create a new model that represents the specific calculation.
+......Continuation.............
+
+________________________________________________________________________________________
+
+
+
+===============================Conclusion===================================
+- FastMCP makes it simple to bring your data, APIs and tools into the world of
+AI with just a few lines of python code.
+	> MCP servers that connect to LLMs
+	> Automate workflows
+	> Handle real-world logic securely
+- FastMCP ---> Idea to Production
+
+Next Article👉👉👉https://www.freecodecamp.org/news/how-to-build-your-own-mcp-server-with-python/
+
+
+
+
+	

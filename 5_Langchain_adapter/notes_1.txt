@@ -1,0 +1,92 @@
+=====LangChain-MCP-Adapter======
+- Bridges langchain/langgraph agents with Anthropic mcp..
+- Allows developers to tap in 100's of MCP servers without writing custom
+adapters.
+
+
+=====What is MCP?====
+- Open source standard protocol for connecting AI applications to exteral
+systems, allowing them to connect to:
+	> Tools
+	> Data Sources
+	> Workflows
+Think of it like a USB-C standardized device connectivity.
+
+=====Understanding langchain-mcp-adapters======
+Functions:
+1. Tool Conversion: Automatically convert MCP tools into langChain and LangGraph
+compatible tools
+2. Multi-Server Management: Enables simulataneous interaction with multiple
+MCP servers.
+3. Seamless Intergration: Provides a unified interface without requiring manual
+MCP client management.
+
+==Key Benefits==
+- ALlows agents to pull from multiple MCP servers at once for more powerful
+applications
+- Developers can:
+1. Developers can access hundreds of pre-built MCP servers for popular services
+like Google Drive, Slack, GitHub,Postgres and more.
+2. Avoid writing custom intergration code for each tool
+3. Switch between Different tools and servers without architectural changes
+4. Build sophisticated multi-tool workflows efficiently
+
+=== Transport Types===
+1. STDIO(standard Input/Output)
+- CLient launches the server as subprocess and communicates via standard
+input/output.
+CASE: For local tools and simple setups.
+- The subprocess persists for the lifetime of the client connection.
+***********************************
+{
+    "math": {
+        "transport": "stdio",
+        "command": "python",
+        "args": ["/path/to/math_server.py"]
+    }
+}
+************************************
+
+
+2. Streamable HTTP
+- Server runs as an independent process handling HTTP requests, supporting 
+remote connections and multiple clients.
+*************************************
+{
+    "weather": {
+        "transport": "streamable_http",
+        "url": "http://localhost:8000/mcp"
+    }
+}
+*************************************
+
+3. Server-Sent Events(SSE)
+- Variant of streamable HTTP optimized for real-time streaming communication.
+
+=======Using MultiServerMCPClient=======
+- Is the primary interface for working with MCP servers in LangChain
+===Configuration Options===
+1. "throwOnLoadError":  Whether to through errors if tool fails(default:true)
+2. "prefixToolNameWithServerName"(default:false): Adds server name prefix to tool
+names
+3. "additionalToolNamePrefix": Custom prefix for tool names
+
+
+=====Stateless vs Stateful Operation=====
+- By Default, MultiServerMCPClient is stateless----> each tool call creates an new
+session. Meaning:
+	> Each tool invocation creates a fresh session
+	> Session is cleaned up after execution
+	> Suitable for independent, one-off operations
+Stateful Mode- Servers requiring persistent context between calls
+*****************************************************************
+from langchain_mcp_adapters.tools import load_mcp_tools
+
+client = MultiServerMCPClient({...})
+async with client.session("math") as session:
+    tools = await load_mcp_tools(session)
+    # Tools maintain state within this session
+*****************************************************************
+
+=======Creating Custom MCP Servers======
+

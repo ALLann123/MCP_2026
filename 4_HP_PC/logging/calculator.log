@@ -1,0 +1,9 @@
+2026-03-22 18:14:10,831 - INFO - Calculator started
+2026-03-22 18:14:15,808 - INFO - Adding 21.0 + 3.0
+2026-03-22 18:14:56,316 - INFO - Calculator started
+2026-03-22 18:15:07,402 - ERROR - Attempted Division by zero
+Traceback (most recent call last):
+  File "J:\2_Open-claw_Agents\logging\calc_logging.py", line 17, in divide
+    result=a/b
+           ~^~
+ZeroDivisionError: float division by zero

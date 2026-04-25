@@ -4,7 +4,7 @@ Working on LangGraph, MCP, and OpenClaw
  
 # LangChain Agent with FastMCP Tavily for web search 
 
-# server.py
+# server.py 
 
 - Client will connect to our MCP server listening on port 8000 and we can see via response codes 200🎉🎉🥳
 

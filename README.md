@@ -9,7 +9,7 @@ Working on LangGraph, MCP, and OpenClaw
 
 <img width="2560" height="1212" alt="image" src="https://github.com/user-attachments/assets/8ec32a47-127c-4174-af4c-5a93058093fa" />
 
-# Client.py
+# Client.py 
 
 - Set the prompt depending on the large language model you are using to prevent errors. Mine is llama model from groq
 

@@ -1,6 +1,6 @@
 # MCP_2026 
 Working on LangGraph, MCP, and OpenClaw
- 
+    
 # LangChain Agent with FastMCP Tavily for web search 
 
 # server.py 

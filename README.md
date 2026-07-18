@@ -23,3 +23,8 @@ Testing vision:
 
 <img width="1371" height="308" alt="image" src="https://github.com/user-attachments/assets/45b0618a-3b17-44cc-9d55-038d92b2b15a" />
 
+Scraping tool Agent to read web pages:
+
+<img width="1348" height="113" alt="image" src="https://github.com/user-attachments/assets/ebb99c0c-8de7-464c-a9a1-2a2e02affcee" />
+
+
